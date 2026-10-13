@@ -1,0 +1,8 @@
+.env
+.secrets/
+secrets/
+data/
+*.sqlite*
+approval-center
+
+.codegraph/

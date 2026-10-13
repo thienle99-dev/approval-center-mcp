@@ -1,0 +1,8 @@
+.git
+.codegraph
+.env
+.secrets
+secrets
+data
+*.sqlite*
+*.log

@@ -1,0 +1,18 @@
+version: "1"
+policies:
+  - id: deny-blocked-target
+    action_type: "*"
+    target: blocked
+    executor: "*"
+    requester: "*"
+    deny: true
+    risk: CRITICAL
+  - id: production-ssh
+    action_type: ssh.command
+    target: production
+    executor: ssh-commander
+    requester: "*"
+    risk: HIGH
+    minimum_approvers: 1
+    ttl_seconds: 120
+    allowed_approver_ids: []

@@ -1,0 +1,14 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS requesters(id TEXT PRIMARY KEY, identity TEXT NOT NULL UNIQUE, token_hash TEXT NOT NULL UNIQUE, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS executors(id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS approvers(id INTEGER PRIMARY KEY, telegram_user_id INTEGER NOT NULL UNIQUE, display_name TEXT NOT NULL, role TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS approval_requests(id TEXT PRIMARY KEY, requester_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT NOT NULL, action_type TEXT NOT NULL, specification TEXT NOT NULL, digest TEXT NOT NULL, policy_version TEXT NOT NULL, risk TEXT NOT NULL, reason TEXT NOT NULL, status TEXT NOT NULL, minimum_approvers INTEGER NOT NULL, allowed_approvers TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, updated_at TEXT NOT NULL, idempotency_key TEXT NOT NULL, FOREIGN KEY(requester_id) REFERENCES requesters(id), UNIQUE(requester_id,idempotency_key));
+CREATE INDEX IF NOT EXISTS request_status_expiry ON approval_requests(status,expires_at);
+CREATE TABLE IF NOT EXISTS approval_decisions(id INTEGER PRIMARY KEY, request_id TEXT NOT NULL REFERENCES approval_requests(id), approver_id INTEGER NOT NULL REFERENCES approvers(id), decision TEXT NOT NULL, decided_at TEXT NOT NULL, UNIQUE(request_id,approver_id));
+CREATE TABLE IF NOT EXISTS telegram_callbacks(token TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES approval_requests(id), decision TEXT NOT NULL, expires_at TEXT NOT NULL, used_at TEXT);
+CREATE TABLE IF NOT EXISTS execution_claims(id INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE REFERENCES approval_requests(id), executor_id TEXT NOT NULL, attempt_id TEXT NOT NULL UNIQUE, claimed_at TEXT NOT NULL, status TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS execution_results(id INTEGER PRIMARY KEY, request_id TEXT NOT NULL REFERENCES approval_requests(id), execution_id TEXT NOT NULL UNIQUE, started_at TEXT, finished_at TEXT, outcome TEXT NOT NULL, result_reference TEXT, error_summary TEXT);
+CREATE TABLE IF NOT EXISTS audit_events(id INTEGER PRIMARY KEY, request_id TEXT, actor_id TEXT NOT NULL, actor_type TEXT NOT NULL, event_type TEXT NOT NULL, event_json TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS audit_request ON audit_events(request_id,id);
+INSERT OR IGNORE INTO schema_migrations(version,applied_at) VALUES(1,CURRENT_TIMESTAMP);
